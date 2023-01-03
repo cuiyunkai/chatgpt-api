@@ -142,6 +142,7 @@ export async function getOpenAIAuth({
       let submitP: () => Promise<void>
 
       if (isGoogleLogin) {
+        await delay(500)
         await page.waitForSelector('button[data-provider="google"]', {
           timeout: timeoutMs
         })
@@ -150,9 +151,6 @@ export async function getOpenAIAuth({
           '+++++++++++++++++++ should click the button +++++++++++++++++++++++++++++++++++++++++'
         )
         await page.waitForNavigation()
-        console.log(
-          '+++++++++++++++++++ should Navigate +++++++++++++++++++++++++++++++++++++++++'
-        )
         if ((await page.waitForSelector('input[type="email"]')) !== null) {
           await page.type('input[type="email"]', email, { delay: 10 })
           await Promise.all([
@@ -166,8 +164,13 @@ export async function getOpenAIAuth({
           await delay(50)
           // submitP = () => page.keyboard.press('Enter')
           await Promise.all([
-            page.waitForNavigation(),
-            await page.keyboard.press('Enter')
+            waitForConditionOrAtCapacity(page, () =>
+              page.waitForNavigation({
+                waitUntil: 'networkidle2',
+                timeout: timeoutMs
+              })
+            ),
+            page.keyboard.press('Enter')
           ])
           // Add logic to send verification to user if there is a google security check
           if ((await page.$('input[aria-label="Enter code"]')) !== null) {
@@ -183,16 +186,13 @@ export async function getOpenAIAuth({
             (await page.$('input[aria-label="Enter code"]')) !== null
           ) {
           } else {
-            submitP = () => page.waitForNetworkIdle()
+            //submitP = () => page.waitForNetworkIdle()
+            await page.keyboard.press('Enter')
           }
-          console.log(
-            '+++++++++++++++++++ Finished all the logics  +++++++++++++++++++++++++++++++++++++++++'
-          )
         } else if (
           (await page.waitForSelector('div[data-identifier=${email}]')) !== null
         ) {
           await page.click('div[data-identifier=${email}]')
-          submitP = () => page.waitForNavigation()
         }
       } else if (isMicrosoftLogin) {
         await page.click('button[data-provider="windowslive"]')
@@ -255,15 +255,23 @@ export async function getOpenAIAuth({
         submitP = () => page.click('button[type="submit"]')
       }
 
-      await Promise.all([
-        waitForConditionOrAtCapacity(page, () =>
-          page.waitForNavigation({
-            waitUntil: 'networkidle2',
-            timeout: timeoutMs
-          })
-        ),
-        submitP()
-      ])
+      console.log(
+        '+++++++++++++++++++ starting polling +++++++++++++++++++++++++++++++++++++++++'
+      )
+      if (!isGoogleLogin) {
+        await Promise.all([
+          waitForConditionOrAtCapacity(page, () =>
+            page.waitForNavigation({
+              waitUntil: 'networkidle2',
+              timeout: timeoutMs
+            })
+          ),
+          submitP()
+        ])
+      }
+      console.log(
+        '+++++++++++++++++++ fnished polling +++++++++++++++++++++++++++++++++++++++++'
+      )
     } else {
       await delay(2000)
       await checkForChatGPTAtCapacity(page, { timeoutMs })

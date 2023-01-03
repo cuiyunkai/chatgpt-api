@@ -19,8 +19,9 @@ async function main() {
   const api = new ChatGPTAPIBrowser({
     email,
     password,
-    debug: false,
-    minimize: true
+    debug: true,
+    minimize: true,
+    isGoogleLogin: true
   })
   await api.initSession()
 
