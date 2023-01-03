@@ -12,6 +12,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import random from 'random'
 
 import * as types from './types'
+import { sendImage } from './telegram'
 import { minimizePage } from './utils'
 
 puppeteer.use(StealthPlugin())
@@ -145,16 +146,54 @@ export async function getOpenAIAuth({
           timeout: timeoutMs
         })
         await page.click('button[data-provider="google"]')
-        await page.waitForSelector('input[type="email"]')
-        await page.type('input[type="email"]', email)
-        await Promise.all([
-          page.waitForNavigation(),
-          await page.keyboard.press('Enter')
-        ])
-        await page.waitForSelector('input[type="password"]', { visible: true })
-        await page.type('input[type="password"]', password)
-        await delay(50)
-        submitP = () => page.keyboard.press('Enter')
+        console.log(
+          '+++++++++++++++++++ should click the button +++++++++++++++++++++++++++++++++++++++++'
+        )
+        await page.waitForNavigation()
+        console.log(
+          '+++++++++++++++++++ should Navigate +++++++++++++++++++++++++++++++++++++++++'
+        )
+        if ((await page.waitForSelector('input[type="email"]')) !== null) {
+          await page.type('input[type="email"]', email, { delay: 10 })
+          await Promise.all([
+            page.waitForNavigation(),
+            await page.keyboard.press('Enter')
+          ])
+          await page.waitForSelector('input[type="password"]', {
+            visible: true
+          })
+          await page.type('input[type="password"]', password, { delay: 10 })
+          await delay(50)
+          // submitP = () => page.keyboard.press('Enter')
+          await Promise.all([
+            page.waitForNavigation(),
+            await page.keyboard.press('Enter')
+          ])
+          // Add logic to send verification to user if there is a google security check
+          if ((await page.$('input[aria-label="Enter code"]')) !== null) {
+            // do things with its content
+            await page.screenshot({ path: './google_auth_security_code.png' })
+            await sendImage(
+              Number(process.env.CHAT_ID),
+              './google_auth_security_code.png'
+            )
+            // await page.type('input[aria-label="Enter code"]', email, { delay: 10 })
+            // await page.click('')
+          } else if (
+            (await page.$('input[aria-label="Enter code"]')) !== null
+          ) {
+          } else {
+            submitP = () => page.waitForNetworkIdle()
+          }
+          console.log(
+            '+++++++++++++++++++ Finished all the logics  +++++++++++++++++++++++++++++++++++++++++'
+          )
+        } else if (
+          (await page.waitForSelector('div[data-identifier=${email}]')) !== null
+        ) {
+          await page.click('div[data-identifier=${email}]')
+          submitP = () => page.waitForNavigation()
+        }
       } else if (isMicrosoftLogin) {
         await page.click('button[data-provider="windowslive"]')
         await page.waitForSelector('input[type="email"]')

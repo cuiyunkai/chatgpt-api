@@ -48,6 +48,7 @@
     "remark": "^14.0.2",
     "strip-markdown": "^5.0.0",
     "tempy": "^3.0.0",
+    "telegraf": "^4.11.2",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
