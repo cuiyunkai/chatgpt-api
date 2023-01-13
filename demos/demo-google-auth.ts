@@ -15,13 +15,15 @@ dotenv.config()
 async function main() {
   const email = process.env.OPENAI_EMAIL
   const password = process.env.OPENAI_PASSWORD
+  const userDataDir = process.env.USER_DATA_DIR
 
   const api = new ChatGPTAPIBrowser({
     email,
     password,
     isGoogleLogin: true,
-    debug: false,
-    minimize: true
+    debug: true,
+    minimize: true,
+    userDataDir
   })
   await api.initSession()
 

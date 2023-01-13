@@ -22,6 +22,7 @@ let hasNopechaExtension = false
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 const DEFAULT_TIMEOUT_MS = 3 * 60 * 1000 // 3 minutes
+const DEFAULT_DATA_DIR = '~/.config/google-chrome'
 
 /**
  * Represents everything that's required to pass into `ChatGPTAPI` in order
@@ -60,6 +61,7 @@ export async function getOpenAIAuth({
   nopechaKey = process.env.NOPECHA_KEY,
   executablePath,
   proxyServer = process.env.PROXY_SERVER,
+  userDataDir = process.env.USER_DATA_DIR,
   minimize = false
 }: {
   email?: string
@@ -74,6 +76,7 @@ export async function getOpenAIAuth({
   nopechaKey?: string
   executablePath?: string
   proxyServer?: string
+  userDataDir?: string
 }): Promise<OpenAIAuth> {
   const origBrowser = browser
   const origPage = page
@@ -85,7 +88,8 @@ export async function getOpenAIAuth({
         nopechaKey,
         executablePath,
         proxyServer,
-        timeoutMs
+        timeoutMs,
+        userDataDir
       })
     }
 
@@ -152,6 +156,9 @@ export async function getOpenAIAuth({
         )
         await page.waitForNavigation()
         if ((await page.waitForSelector('input[type="email"]')) !== null) {
+          console.log(
+            '+++++++++++++++++++ No Login Account +++++++++++++++++++++++++++++++++++++++++'
+          )
           await page.type('input[type="email"]', email, { delay: 10 })
           await Promise.all([
             page.waitForNavigation(),
@@ -192,6 +199,9 @@ export async function getOpenAIAuth({
         } else if (
           (await page.waitForSelector('div[data-identifier=${email}]')) !== null
         ) {
+          console.log(
+            '+++++++++++++++++++ Should Click Logged in account with specified email +++++++++++++++++++++++++++++++++++++++++'
+          )
           await page.click('div[data-identifier=${email}]')
         }
       } else if (isMicrosoftLogin) {
@@ -351,6 +361,7 @@ export async function getBrowser(
     minimize?: boolean
     debug?: boolean
     timeoutMs?: number
+    userDataDir?: string
   } = {}
 ) {
   const {
@@ -361,6 +372,7 @@ export async function getBrowser(
     minimize = false,
     debug = false,
     timeoutMs = DEFAULT_TIMEOUT_MS,
+    userDataDir = DEFAULT_DATA_DIR,
     ...launchOptions
   } = opts
 
@@ -396,8 +408,8 @@ export async function getBrowser(
     '--mute-audio',
     '--disable-default-apps',
     '--no-zygote',
-    '--disable-accelerated-2d-canvas',
-    '--disable-web-security'
+    '--disable-accelerated-2d-canvas'
+    //'--disable-web-security'
     // '--disable-gpu'
     // '--js-flags="--max-old-space-size=1024"'
   ]
@@ -432,6 +444,7 @@ export async function getBrowser(
     ],
     ignoreHTTPSErrors: true,
     executablePath,
+    userDataDir,
     ...launchOptions
   })
 

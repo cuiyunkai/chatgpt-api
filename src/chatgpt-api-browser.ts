@@ -35,12 +35,12 @@ export class ChatGPTAPIBrowser extends AChatGPTAPI {
   protected _browser: Browser
   protected _page: Page
   protected _proxyServer: string
+  protected _userDataDir: string
   protected _isRefreshing: boolean
   protected _messageOnProgressHandlers: Record<
     string,
     (partialResponse: types.ChatResponse) => void
   >
-  protected _userDataDir: string
 
   /**
    * Creates a new client for automating the ChatGPT webapp.
@@ -79,7 +79,7 @@ export class ChatGPTAPIBrowser extends AChatGPTAPI {
     /** @defaultValue `undefined` **/
     proxyServer?: string
 
-    /** @defaultValue `random directory with email as prefix` **/
+    /** @defaultValue `undefined` **/
     userDataDir?: string
   }) {
     super()
@@ -114,8 +114,7 @@ export class ChatGPTAPIBrowser extends AChatGPTAPI {
     this._proxyServer = proxyServer
     this._isRefreshing = false
     this._messageOnProgressHandlers = {}
-    this._userDataDir =
-      userDataDir ?? temporaryDirectory({ prefix: this._email })
+    this._userDataDir = userDataDir
 
     if (!this._email) {
       const error = new types.ChatGPTError('ChatGPT invalid email')
